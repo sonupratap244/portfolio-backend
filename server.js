@@ -32,9 +32,10 @@ const app = express();
 app.use(
   cors({
     origin: [
+       "https://sonpratap.onrender.com",
       "http://localhost:5173",
       "http://localhost:3000",
-      "https://sonpratap.onrender.com",
+     
     ],
     credentials: true,
   })
