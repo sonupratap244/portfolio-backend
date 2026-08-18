@@ -7,7 +7,7 @@ dotenv.config();
 const seedAdmin = async () => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || "admin@gmail.com";
-    const adminPassword = process.env.ADMIN_PASSWORD || "123456";
+    const adminPassword = process.env.ADMIN_PASSWORD || "Sonu@2025";
 
     const existingAdmin = await Admin.findOne({ email: adminEmail });
     
