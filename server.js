@@ -8,7 +8,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
+
 import profileRoutes from "./routes/profileRoutes.js";
 import connectDB from "./config/db.js";
 import experienceRoutes from "./routes/Experience.js";
@@ -16,8 +17,6 @@ import projectRoutes from "./routes/projectRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import seedAdmin from "./seeders/adminSeeder.js";
-
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,15 +28,37 @@ await seedAdmin();
 
 const app = express();
 
+const allowedOrigins = [
+  "https://sonpratap.onrender.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
 app.use(
   cors({
-    origin: [
-       "https://sonpratap.onrender.com",
-      "http://localhost:5173",
-      "http://localhost:3000",
-     
-    ],
+    origin: function (origin, callback) {
+      // Postman / server-to-server request
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("❌ CORS Blocked Origin:", origin);
+
+      return callback(new Error(`CORS blocked: ${origin}`));
+    },
+
     credentials: true,
+
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
   })
 );
 
@@ -46,7 +67,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
 
 app.use("/api/profile", profileRoutes);
 app.use("/api/experience", experienceRoutes);
@@ -54,16 +78,16 @@ app.use("/api/project", projectRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
 
-
 app.get("/", (req, res) => {
   res.json({
     status: true,
-    message: "Portfolio Backend Running"
+    message: "Portfolio Backend Running",
   });
 });
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`✅ Server Running On ${PORT}`);
-  console.log(`📁 Uploads path: ${path.join(__dirname, 'uploads')}`);
+  console.log(`📁 Uploads path: ${path.join(__dirname, "uploads")}`);
 });
