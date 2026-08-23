@@ -1,10 +1,35 @@
 import Project from "../models/Project.js";
-import fs from 'fs';
-import path from 'path';
+import cloudinary from "../config/cloudinary.js";
 
+// Upload file to Cloudinary
+const uploadToCloudinary = (file) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "portfolio/projects",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+
+    stream.end(file.buffer);
+  });
+};
+
+
+// ===============================
+// GET ALL PROJECTS
+// ===============================
 export const getProjects = async (req, res) => {
   try {
     const projects = await Project.find().sort({ createdAt: -1 });
+
     res.status(200).json({
       success: true,
       data: projects,
@@ -17,15 +42,21 @@ export const getProjects = async (req, res) => {
   }
 };
 
+
+// ===============================
+// GET PROJECT BY ID
+// ===============================
 export const getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
+
     if (!project) {
       return res.status(404).json({
         success: false,
         message: "Project not found",
       });
     }
+
     res.status(200).json({
       success: true,
       data: project,
@@ -38,25 +69,31 @@ export const getProjectById = async (req, res) => {
   }
 };
 
+
+// ===============================
+// CREATE PROJECT
+// ===============================
 export const createProject = async (req, res) => {
   try {
     const data = req.body;
+
+    // Upload image to Cloudinary
     if (req.file) {
-      data.image = req.file.filename;
+      const result = await uploadToCloudinary(req.file);
+
+      data.image = result.secure_url;
     }
+
     const project = await Project.create(data);
+
     res.status(201).json({
       success: true,
       message: "Project created successfully",
       data: project,
     });
   } catch (err) {
-    if (req.file) {
-      const filePath = path.join('uploads/projects', req.file.filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    console.log("Create Project Error:", err);
+
     res.status(500).json({
       success: false,
       message: err.message,
@@ -64,9 +101,14 @@ export const createProject = async (req, res) => {
   }
 };
 
+
+// ===============================
+// UPDATE PROJECT
+// ===============================
 export const updateProject = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
+
     if (!project) {
       return res.status(404).json({
         success: false,
@@ -75,14 +117,12 @@ export const updateProject = async (req, res) => {
     }
 
     const data = req.body;
+
+    // If new image selected
     if (req.file) {
-      if (project.image) {
-        const oldImagePath = path.join('uploads/projects', project.image);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
-      }
-      data.image = req.file.filename;
+      const result = await uploadToCloudinary(req.file);
+
+      data.image = result.secure_url;
     }
 
     const updatedProject = await Project.findByIdAndUpdate(
@@ -100,12 +140,8 @@ export const updateProject = async (req, res) => {
       data: updatedProject,
     });
   } catch (err) {
-    if (req.file) {
-      const filePath = path.join('uploads/projects', req.file.filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    console.log("Update Project Error:", err);
+
     res.status(500).json({
       success: false,
       message: err.message,
@@ -113,9 +149,14 @@ export const updateProject = async (req, res) => {
   }
 };
 
+
+// ===============================
+// DELETE PROJECT
+// ===============================
 export const deleteProject = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
+
     if (!project) {
       return res.status(404).json({
         success: false,
@@ -123,12 +164,12 @@ export const deleteProject = async (req, res) => {
       });
     }
 
-    if (project.image) {
-      const imagePath = path.join('uploads/projects', project.image);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    }
+    /*
+      Cloudinary image deletion can be added here later
+      using the public_id.
+
+      For now, deleting the MongoDB project is enough.
+    */
 
     await Project.findByIdAndDelete(req.params.id);
 
@@ -137,6 +178,8 @@ export const deleteProject = async (req, res) => {
       message: "Project deleted successfully",
     });
   } catch (err) {
+    console.log("Delete Project Error:", err);
+
     res.status(500).json({
       success: false,
       message: err.message,
