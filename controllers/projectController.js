@@ -1,9 +1,15 @@
 import Project from "../models/Project.js";
 import cloudinary from "../config/cloudinary.js";
 
-// Upload file to Cloudinary
+// ===============================
+// UPLOAD IMAGE TO CLOUDINARY
+// ===============================
 const uploadToCloudinary = (file) => {
   return new Promise((resolve, reject) => {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      return reject(new Error("File buffer is empty"));
+    }
+
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: "portfolio/projects",
@@ -11,17 +17,16 @@ const uploadToCloudinary = (file) => {
       },
       (error, result) => {
         if (error) {
-          reject(error);
-        } else {
-          resolve(result);
+          return reject(error);
         }
+
+        resolve(result);
       }
     );
 
     stream.end(file.buffer);
   });
 };
-
 
 // ===============================
 // GET ALL PROJECTS
@@ -35,13 +40,14 @@ export const getProjects = async (req, res) => {
       data: projects,
     });
   } catch (err) {
+    console.error("Get Projects Error:", err);
+
     res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 };
-
 
 // ===============================
 // GET PROJECT BY ID
@@ -62,6 +68,8 @@ export const getProjectById = async (req, res) => {
       data: project,
     });
   } catch (err) {
+    console.error("Get Project By ID Error:", err);
+
     res.status(500).json({
       success: false,
       message: err.message,
@@ -69,16 +77,24 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-
 // ===============================
 // CREATE PROJECT
 // ===============================
 export const createProject = async (req, res) => {
   try {
-    const data = req.body;
+    const data = {
+      ...req.body,
+    };
 
-    // Upload image to Cloudinary
+    // New image selected
     if (req.file) {
+      console.log(
+        "Create Image:",
+        req.file.originalname,
+        req.file.size,
+        req.file.mimetype
+      );
+
       const result = await uploadToCloudinary(req.file);
 
       data.image = result.secure_url;
@@ -92,7 +108,7 @@ export const createProject = async (req, res) => {
       data: project,
     });
   } catch (err) {
-    console.log("Create Project Error:", err);
+    console.error("Create Project Error:", err);
 
     res.status(500).json({
       success: false,
@@ -100,7 +116,6 @@ export const createProject = async (req, res) => {
     });
   }
 };
-
 
 // ===============================
 // UPDATE PROJECT
@@ -116,15 +131,30 @@ export const updateProject = async (req, res) => {
       });
     }
 
-    const data = req.body;
+    const data = {
+      ...req.body,
+    };
 
-    // If new image selected
+    // =====================================
+    // ONLY UPLOAD IF NEW IMAGE IS SELECTED
+    // =====================================
     if (req.file) {
+      console.log(
+        "Update Image:",
+        req.file.originalname,
+        req.file.size,
+        req.file.mimetype
+      );
+
       const result = await uploadToCloudinary(req.file);
 
       data.image = result.secure_url;
     }
 
+    // =====================================
+    // IF NO NEW IMAGE
+    // OLD IMAGE REMAINS UNCHANGED
+    // =====================================
     const updatedProject = await Project.findByIdAndUpdate(
       req.params.id,
       data,
@@ -140,7 +170,7 @@ export const updateProject = async (req, res) => {
       data: updatedProject,
     });
   } catch (err) {
-    console.log("Update Project Error:", err);
+    console.error("Update Project Error:", err);
 
     res.status(500).json({
       success: false,
@@ -148,7 +178,6 @@ export const updateProject = async (req, res) => {
     });
   }
 };
-
 
 // ===============================
 // DELETE PROJECT
@@ -164,13 +193,6 @@ export const deleteProject = async (req, res) => {
       });
     }
 
-    /*
-      Cloudinary image deletion can be added here later
-      using the public_id.
-
-      For now, deleting the MongoDB project is enough.
-    */
-
     await Project.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
@@ -178,7 +200,7 @@ export const deleteProject = async (req, res) => {
       message: "Project deleted successfully",
     });
   } catch (err) {
-    console.log("Delete Project Error:", err);
+    console.error("Delete Project Error:", err);
 
     res.status(500).json({
       success: false,
