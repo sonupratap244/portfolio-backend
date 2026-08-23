@@ -7,8 +7,6 @@ const uploadToCloudinary = (file, folder, resourceType = "image") => {
       {
         folder: `portfolio/${folder}`,
         resource_type: resourceType,
-        use_filename: true,
-        unique_filename: true,
       },
       (error, result) => {
         if (error) {
@@ -202,18 +200,6 @@ export const uploadResume = async (req, res) => {
       });
     }
 
-    if (
-      req.file.mimetype !== "application/pdf" &&
-      req.file.mimetype !== "application/msword" &&
-      req.file.mimetype !==
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Only PDF, DOC and DOCX files are allowed.",
-      });
-    }
-
     const result = await uploadToCloudinary(
       req.file,
       "resume",
@@ -234,10 +220,11 @@ export const uploadResume = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Resume Uploaded Successfully",
-      resume: profile.resume,
+      resume: result.secure_url,
     });
+
   } catch (err) {
-    console.error("Resume upload error:", err);
+    console.error("Resume Upload Error:", err);
 
     res.status(500).json({
       success: false,
