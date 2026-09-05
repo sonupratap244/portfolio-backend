@@ -11,17 +11,10 @@ import {
 
 const router = express.Router();
 
-// ===============================
-// MULTER MEMORY STORAGE
-// ===============================
-// File disk par save nahi hogi.
-// File directly memory mein buffer ke form mein milegi.
-// Cloudinary ko buffer chahiye.
+
 const storage = multer.memoryStorage();
 
-// ===============================
-// FILE FILTER
-// ===============================
+
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
@@ -30,9 +23,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// ===============================
-// MULTER CONFIG
-// ===============================
+
 const upload = multer({
   storage,
   limits: {
@@ -41,34 +32,22 @@ const upload = multer({
   fileFilter,
 });
 
-// ===============================
-// GET ALL PROJECTS
-// ===============================
+
 router.get("/", getProjects);
 
-// ===============================
-// GET PROJECT BY ID
-// ===============================
+
 router.get("/:id", getProjectById);
 
-// ===============================
-// CREATE PROJECT
-// ===============================
+
 router.post("/", upload.single("image"), createProject);
 
-// ===============================
-// UPDATE PROJECT
-// ===============================
+
 router.put("/:id", upload.single("image"), updateProject);
 
-// ===============================
-// DELETE PROJECT
-// ===============================
+
 router.delete("/:id", deleteProject);
 
-// ===============================
-// MULTER ERROR HANDLER
-// ===============================
+
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {

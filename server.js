@@ -14,6 +14,8 @@ import projectRoutes from "./routes/projectRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import seedAdmin from "./seeders/adminSeeder.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 dns.setServers([
   "8.8.8.8",
@@ -24,6 +26,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
+
+console.log("\n========== ENV CHECK ==========");
+
+console.log(
+  "RAZORPAY_KEY_ID:",
+  process.env.RAZORPAY_KEY_ID
+    ? `${process.env.RAZORPAY_KEY_ID.substring(0, 12)}...`
+    : "NOT FOUND"
+);
+
+console.log(
+  "RAZORPAY_KEY_SECRET:",
+  process.env.RAZORPAY_KEY_SECRET
+    ? "LOADED"
+    : "NOT FOUND"
+);
+
+console.log(
+  "NODE_ENV:",
+  process.env.NODE_ENV || "NOT SET"
+);
+
+console.log("================================\n");
 
 await connectDB();
 await seedAdmin();
@@ -57,6 +82,8 @@ app.use("/api/experience", experienceRoutes);
 app.use("/api/project", projectRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -72,6 +99,7 @@ app.use((req, res) => {
     path: req.originalUrl,
   });
 });
+
 
 app.use((err, req, res, next) => {
   console.error("Server Error:", err);
